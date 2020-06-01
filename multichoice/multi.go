@@ -1,25 +1,17 @@
 package multichoice
 
 import (
-	"encoding/json"
-	"fmt"
-	"html"
-	"net/http"
+	"errors"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
+
+func CMDName() string {
+	return "multi"
+}
 
 // MultiChoice prints the JSON encoded "message" field in the body
 // of the request or "Hello, World!" if there isn't one.
-func MultiChoice(w http.ResponseWriter, r *http.Request) {
-	var d struct {
-		Message string `json:"message"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
-		fmt.Fprint(w, "Hello World!")
-		return
-	}
-	if d.Message == "" {
-		fmt.Fprint(w, "Hello World!")
-		return
-	}
-	fmt.Fprint(w, html.EscapeString(d.Message))
+func MultiChoice(tgbotapi.Update) (*tgbotapi.Message, error) {
+	return nil, errors.New("unimplemented")
 }
