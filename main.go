@@ -14,7 +14,7 @@ type CommandProcessor struct {
 	Process Processor
 }
 
-type Processor func(tgbotapi.Update) (*tgbotapi.Message, error)
+type Processor func(recv tgbotapi.Update) (*tgbotapi.Message, error)
 
 func main() {
 	processors := make(map[string]Processor)
@@ -42,6 +42,13 @@ func main() {
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
+		}
+		if update.Message.IsCommand() {
+			exec := processors[update.Message.Command()]
+			if exec != nil {
+				response, _ := exec(update)
+				fmt.Println(response)
+			}
 		}
 
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)

@@ -15,3 +15,5 @@
 # vendor/
 
 hack-a-bot
+.air.conf
+tmp

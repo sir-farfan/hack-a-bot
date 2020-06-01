@@ -10,8 +10,7 @@ func CMDName() string {
 	return "multi"
 }
 
-// MultiChoice prints the JSON encoded "message" field in the body
-// of the request or "Hello, World!" if there isn't one.
-func MultiChoice(tgbotapi.Update) (*tgbotapi.Message, error) {
+// MultiChoice - returns a multichoice event for the user to pick
+func MultiChoice(recv tgbotapi.Update) (*tgbotapi.Message, error) {
 	return nil, errors.New("unimplemented")
 }
