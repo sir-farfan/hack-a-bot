@@ -1,0 +1,1 @@
+This is a cloud function that formats multi-choice options
