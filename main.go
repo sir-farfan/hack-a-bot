@@ -1,13 +1,27 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/sir-farfan/hack-a-bot/multichoice"
 )
 
+type CommandProcessor struct {
+	CMDName string
+	Process Processor
+}
+
+type Processor func(tgbotapi.Update) (*tgbotapi.Message, error)
+
 func main() {
+	processors := make(map[string]Processor)
+
+	processors[multichoice.CMDName()] = multichoice.MultiChoice
+
+	fmt.Println(processors)
 	log.Printf("hello world 14\n")
 	tgToken := os.Getenv("BOT_TOKEN")
 	log.Printf("bot key: %s\n", tgToken)
