@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
+	"reflect"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/sir-farfan/hack-a-bot/events"
 	"github.com/sir-farfan/hack-a-bot/multichoice"
 )
 
@@ -14,19 +15,36 @@ type CommandProcessor struct {
 	Process Processor
 }
 
-type Processor func(recv tgbotapi.Update) (*tgbotapi.Message, error)
+type Processor func(recv tgapi.Update) (*tgapi.Chattable, error)
+
+var Processors map[string]Processor
+
+func Help(recv tgapi.Update) (*tgapi.Chattable, error) {
+	help := tgapi.NewMessage(recv.Message.Chat.ID, "")
+	help.Text = "Call an action typing (or clicking) any of:"
+
+	cmds := reflect.ValueOf(Processors).MapKeys()
+	log.Println(cmds)
+	for _, cmd := range cmds {
+		log.Println(cmd.String())
+		help.Text += "\n/" + cmd.String()
+	}
+
+	var chat tgapi.Chattable
+	chat = help
+
+	return &chat, nil
+}
 
 func main() {
-	processors := make(map[string]Processor)
+	Processors = make(map[string]Processor)
+	Processors["help"] = Help
+	Processors[multichoice.CMDName()] = multichoice.MultiChoice
+	Processors[events.CMDName()] = events.Events
 
-	processors[multichoice.CMDName()] = multichoice.MultiChoice
-
-	fmt.Println(processors)
-	log.Printf("hello world 14\n")
 	tgToken := os.Getenv("BOT_TOKEN")
-	log.Printf("bot key: %s\n", tgToken)
 
-	bot, err := tgbotapi.NewBotAPI(tgToken)
+	bot, err := tgapi.NewBotAPI(tgToken)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -34,7 +52,7 @@ func main() {
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	u := tgbotapi.NewUpdate(0)
+	u := tgapi.NewUpdate(0)
 	u.Timeout = 60
 
 	updates, err := bot.GetUpdatesChan(u)
@@ -44,18 +62,21 @@ func main() {
 			continue
 		}
 		if update.Message.IsCommand() {
-			exec := processors[update.Message.Command()]
+			exec := Processors[update.Message.Command()]
 			if exec != nil {
-				response, _ := exec(update)
-				fmt.Println(response)
+				response, err := exec(update)
+				if err == nil {
+					_, err = bot.Send(*response)
+					if err != nil {
+						log.Printf("ERROR answering the user: %v\n", err)
+					}
+				}
 			}
+		} else {
+			response, _ := Help(update)
+			bot.Send(*response)
 		}
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		msg.ReplyToMessageID = update.Message.MessageID
-
-		bot.Send(msg)
+		log.Printf("DEBUG: [%s] %s", update.Message.From.UserName, update.Message.Text)
 	}
 }
