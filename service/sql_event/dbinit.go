@@ -1,6 +1,7 @@
 package sql_event
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/jmoiron/sqlx"
@@ -22,6 +23,8 @@ func New() *Storage {
 	}
 
 	statement, _ := db.Prepare("CREATE TABLE IF NOT EXISTS event (id INTEGER PRIMARY KEY, name TEXT, description TEXT)")
+	_, err = statement.Exec()
+	statement, _ = db.Prepare("CREATE TABLE IF NOT EXISTS user (id INTEGER PRIMARY KEY, cookie TEXT)")
 	_, err = statement.Exec()
 	if err != nil {
 		log.Printf("error creating database: %v\n", err)
@@ -57,5 +60,37 @@ func (s *Storage) DeleteEvent(id int) error {
 		return err
 	}
 	_, err = delete.Exec(id)
+	return err
+}
+
+func (s *Storage) UserCookieCreate(user model.User) error {
+	insert, err := s.DB.Prepare("INSERT INTO user (id, cookie) VALUES (?, ?)")
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	_, err = insert.Exec(user.ID, user.Cookie)
+	return err
+}
+
+func (s *Storage) UserCookieGet(id int64) model.User {
+	users := []model.User{}
+	err := s.DB.Select(&users, "SELECT * FROM user WHERE id=?", id)
+
+	if len(users) > 0 {
+		return users[0]
+	}
+	if err != nil {
+		fmt.Println(err)
+	}
+	return model.User{}
+}
+
+func (s *Storage) UserCookieDelete(user model.User) error {
+	delete, err := s.DB.Prepare("DELETE FROM user WHERE id=?")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = delete.Exec(user.ID)
 	return err
 }
