@@ -43,8 +43,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	bot.Debug = false
 
 	u := tgapi.NewUpdate(0)
 	u.Timeout = 60
@@ -71,6 +70,6 @@ func main() {
 			bot.Send(*response)
 		}
 
-		// log.Printf("DEBUG: [%s] %s", update.Message.From.UserName, update.Message.Text)
+		// log.Printf("DEBUG: [%s] %s\n", update.Message.From.UserName, update.Message.Text)
 	}
 }

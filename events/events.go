@@ -1,6 +1,8 @@
 package events
 
 import (
+	"log"
+
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sir-farfan/hack-a-bot/model"
 	"github.com/sir-farfan/hack-a-bot/service/sql_event"
@@ -12,6 +14,7 @@ func CMDName() string {
 
 func RegisterCommands(processors map[string]model.Processor) error {
 	processors["events"] = Events
+	processors["eventcreate"] = Create
 	return nil
 }
 
@@ -45,4 +48,17 @@ func GetEvents() []model.Event {
 	db := sql_event.New()
 
 	return db.GetEvent("")
+}
+
+// Create - will only put the user in "event creation mode"
+func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
+	log.Printf("DEBUG: [%s] %s\n", recv.Message.From.UserName, recv.Message.Text)
+
+	db := sql_event.New()
+	db.UserCookieCreate(model.User{ID: recv.Message.Chat.ID, Cookie: "create"})
+
+	msg := tgapi.NewMessage(recv.Message.Chat.ID, "I'm on it")
+	var chat tgapi.Chattable
+	chat = msg
+	return &chat, nil
 }
