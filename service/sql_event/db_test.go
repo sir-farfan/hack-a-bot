@@ -1,6 +1,7 @@
 package sql_event
 
 import (
+	"fmt"
 	"log"
 	"testing"
 
@@ -22,7 +23,12 @@ func TestEventCreate(t *testing.T) {
 	assert.NotEmpty(t, events)
 
 	for _, evt := range events {
+		fmt.Printf("deleting: %v\n", evt)
 		err = db.DeleteEvent(evt.ID)
 		assert.Nil(t, err)
 	}
+
+	db.CreateEvent(model.Event{Name: "silks", Description: "aerial silks dance"})
+	db.CreateEvent(model.Event{Name: "straps", Description: "aerial straps skills"})
+	db.CreateEvent(model.Event{Name: "pole", Description: "pole fitness"})
 }

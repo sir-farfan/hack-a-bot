@@ -7,17 +7,11 @@ import (
 
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sir-farfan/hack-a-bot/events"
+	"github.com/sir-farfan/hack-a-bot/model"
 	"github.com/sir-farfan/hack-a-bot/multichoice"
 )
 
-type CommandProcessor struct {
-	CMDName string
-	Process Processor
-}
-
-type Processor func(recv tgapi.Update) (*tgapi.Chattable, error)
-
-var Processors map[string]Processor
+var Processors map[string]model.Processor
 
 func Help(recv tgapi.Update) (*tgapi.Chattable, error) {
 	help := tgapi.NewMessage(recv.Message.Chat.ID, "")
@@ -37,10 +31,10 @@ func Help(recv tgapi.Update) (*tgapi.Chattable, error) {
 }
 
 func main() {
-	Processors = make(map[string]Processor)
+	Processors = make(map[string]model.Processor)
 	Processors["help"] = Help
 	Processors[multichoice.CMDName()] = multichoice.MultiChoice
-	Processors[events.CMDName()] = events.Events
+	events.RegisterCommands(Processors)
 
 	tgToken := os.Getenv("BOT_TOKEN")
 
@@ -77,6 +71,6 @@ func main() {
 			bot.Send(*response)
 		}
 
-		log.Printf("DEBUG: [%s] %s", update.Message.From.UserName, update.Message.Text)
+		// log.Printf("DEBUG: [%s] %s", update.Message.From.UserName, update.Message.Text)
 	}
 }

@@ -1,24 +1,28 @@
 package events
 
 import (
-	"log"
-
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/sir-farfan/hack-a-bot/model"
+	"github.com/sir-farfan/hack-a-bot/service/sql_event"
 )
 
 func CMDName() string {
 	return "events"
 }
 
+func RegisterCommands(processors map[string]model.Processor) error {
+	processors["events"] = Events
+	return nil
+}
+
 // Events - Pick an event from the list
 func Events(recv tgapi.Update) (*tgapi.Chattable, error) {
 	var choices []tgapi.InlineKeyboardButton
 
-	events, _ := GetEvents()
+	events := GetEvents()
 	for _, evt := range events {
-		log.Println(evt[1])
-		button := tgapi.InlineKeyboardButton{Text: evt[0],
-			CallbackData: &evt[1],
+		button := tgapi.InlineKeyboardButton{Text: evt.Name,
+			CallbackData: &evt.Description,
 		}
 		choices = append(choices, button)
 	}
@@ -37,9 +41,8 @@ func Events(recv tgapi.Update) (*tgapi.Chattable, error) {
 }
 
 // GetEvents - name, description
-func GetEvents() ([][2]string, error) {
-	return [][2]string{
-		{"Silks", "Aerial silks"},
-		{"straps", "Aerial straps"},
-	}, nil
+func GetEvents() []model.Event {
+	db := sql_event.New()
+
+	return db.GetEvent("")
 }
