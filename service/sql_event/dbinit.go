@@ -67,7 +67,7 @@ func (s *Storage) UpdateEvent(event model.Event) error {
 		_, err := update.Exec(event.Name, event.ID)
 		return err
 	}
-	if event.Description == "" {
+	if event.Description != "" {
 		statement += "description=? WHERE id=?"
 		update, _ := s.DB.Prepare(statement)
 		_, err := update.Exec(event.Description, event.ID)

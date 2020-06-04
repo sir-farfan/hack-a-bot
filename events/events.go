@@ -74,6 +74,9 @@ func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
 
 	msg := tgapi.NewMessage(recv.Message.Chat.ID, "")
 	text := recv.Message.Text
+	if text == "/eventcreate" {
+		text = ""
+	}
 	if event.Name == "" {
 		if text == "" {
 			msg.Text = "What is the name of the event?"

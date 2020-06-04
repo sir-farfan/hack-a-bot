@@ -38,6 +38,14 @@ func TestEvent(t *testing.T) {
 	assert.Equal(t, straps, byOwner[0])
 }
 
+func TestEventSelect(t *testing.T) {
+	db := New()
+	defer db.DB.Close()
+
+	events := db.GetEvent(0)
+	log.Println(events)
+}
+
 func TestUser(t *testing.T) {
 	cookie := model.User{ID: 123, Cookie: "somecommand"}
 	db := New()
