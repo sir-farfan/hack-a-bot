@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testEvent = model.Event{Name: "test event CRUD", Description: "making sure sql works"}
+var testEvent = model.Event{Owner: 1, Name: "test event CRUD", Description: "making sure sql works"}
 
 func TestEvent(t *testing.T) {
 	db := New()
@@ -18,7 +18,7 @@ func TestEvent(t *testing.T) {
 	err := db.CreateEvent(testEvent)
 	assert.Nil(t, err)
 
-	events := db.GetEvent("")
+	events := db.GetEvent(0)
 	log.Println(events)
 	assert.NotEmpty(t, events)
 
@@ -28,9 +28,14 @@ func TestEvent(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	db.CreateEvent(model.Event{Name: "silks", Description: "aerial silks dance"})
-	db.CreateEvent(model.Event{Name: "straps", Description: "aerial straps skills"})
-	db.CreateEvent(model.Event{Name: "pole", Description: "pole fitness"})
+	straps := model.Event{Owner: 3, Name: "straps", Description: "aerial straps skills"}
+	db.CreateEvent(model.Event{Owner: 2, Name: "silks", Description: "aerial silks dance"})
+	db.CreateEvent(straps)
+	db.CreateEvent(model.Event{Owner: 4, Name: "pole", Description: "pole fitness"})
+
+	byOwner := db.GetEvent(straps.Owner)
+	straps.ID = byOwner[0].ID
+	assert.Equal(t, straps, byOwner[0])
 }
 
 func TestUser(t *testing.T) {

@@ -22,7 +22,7 @@ func New() *Storage {
 		return nil
 	}
 
-	statement, _ := db.Prepare("CREATE TABLE IF NOT EXISTS event (id INTEGER PRIMARY KEY, name TEXT, description TEXT)")
+	statement, _ := db.Prepare("CREATE TABLE IF NOT EXISTS event (id INTEGER PRIMARY KEY, owner INTEGER, name TEXT, description TEXT)")
 	_, err = statement.Exec()
 	statement, _ = db.Prepare("CREATE TABLE IF NOT EXISTS user (id INTEGER PRIMARY KEY, cookie TEXT)")
 	_, err = statement.Exec()
@@ -33,9 +33,14 @@ func New() *Storage {
 	return &Storage{DB: db}
 }
 
-func (s *Storage) GetEvent(name string) []model.Event {
+func (s *Storage) GetEvent(owner int64) []model.Event {
 	events := []model.Event{}
-	err := s.DB.Select(&events, "SELECT id, name, description FROM event")
+	statement := "SELECT * FROM event"
+	if owner > 0 {
+		statement += " WHERE owner = ?"
+	}
+	fmt.Println(statement)
+	err := s.DB.Select(&events, statement, owner)
 	if err != nil {
 		log.Println(err)
 	}
@@ -44,17 +49,34 @@ func (s *Storage) GetEvent(name string) []model.Event {
 }
 
 func (s *Storage) CreateEvent(event model.Event) error {
-	insert, err := s.DB.Prepare("INSERT INTO event (name, description) VALUES (?, ?)")
+	insert, err := s.DB.Prepare("INSERT INTO event (owner, name, description) VALUES (?, ?, ?)")
 	if err != nil {
 		log.Printf("Error during insert event: %v\n", err)
 		return err
 	}
-	_, err = insert.Exec(event.Name, event.Description)
+	_, err = insert.Exec(event.Owner, event.Name, event.Description)
 
 	return err
 }
 
-func (s *Storage) DeleteEvent(id int) error {
+func (s *Storage) UpdateEvent(event model.Event) error {
+	statement := "UPDATE event SET "
+	if event.Name != "" {
+		statement += "name=? WHERE id=?"
+		update, _ := s.DB.Prepare(statement)
+		_, err := update.Exec(event.Name, event.ID)
+		return err
+	}
+	if event.Description == "" {
+		statement += "description=? WHERE id=?"
+		update, _ := s.DB.Prepare(statement)
+		_, err := update.Exec(event.Description, event.ID)
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) DeleteEvent(id int64) error {
 	delete, err := s.DB.Prepare("DELETE FROM event WHERE id=?")
 	if err != nil {
 		return err

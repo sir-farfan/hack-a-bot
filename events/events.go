@@ -47,7 +47,7 @@ func Events(recv tgapi.Update) (*tgapi.Chattable, error) {
 func GetEvents() []model.Event {
 	db := sql_event.New()
 
-	return db.GetEvent("")
+	return db.GetEvent(0)
 }
 
 // Create - will only put the user in "event creation mode"
@@ -55,9 +55,45 @@ func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
 	log.Printf("DEBUG: [%s] %s\n", recv.Message.From.UserName, recv.Message.Text)
 
 	db := sql_event.New()
-	db.UserCookieCreate(model.User{ID: recv.Message.Chat.ID, Cookie: "create"})
+	cookie := db.UserCookieGet(recv.Message.Chat.ID)
+	if cookie.Cookie != "eventcreate" {
+		db.UserCookieCreate(model.User{ID: recv.Message.Chat.ID, Cookie: "eventcreate"})
+	}
 
-	msg := tgapi.NewMessage(recv.Message.Chat.ID, "I'm on it")
+	events := db.GetEvent(recv.Message.Chat.ID)
+	if len(events) == 0 {
+		db.CreateEvent(model.Event{Owner: recv.Message.Chat.ID})
+		events = db.GetEvent(recv.Message.Chat.ID)
+	}
+	event := events[0]
+	for k, _ := range events {
+		if events[k].Name == "" || events[k].Description == "" {
+			event = events[k]
+		}
+	}
+
+	msg := tgapi.NewMessage(recv.Message.Chat.ID, "")
+	text := recv.Message.Text
+	if event.Name == "" {
+		if text == "" {
+			msg.Text = "What is the name of the event?"
+		} else {
+			event.Name = text
+			db.UpdateEvent(event)
+			msg.Text = "Done, now the description"
+		}
+	} else if event.Description == "" {
+		if text == "" {
+			msg.Text = "Give a description for your event"
+		} else {
+			event.Name = ""
+			event.Description = text
+			db.UpdateEvent(event)
+			msg.Text = "We're done"
+			db.UserCookieDelete(cookie)
+		}
+	}
+
 	var chat tgapi.Chattable
 	chat = msg
 	return &chat, nil

@@ -9,6 +9,7 @@ import (
 	"github.com/sir-farfan/hack-a-bot/events"
 	"github.com/sir-farfan/hack-a-bot/model"
 	"github.com/sir-farfan/hack-a-bot/multichoice"
+	"github.com/sir-farfan/hack-a-bot/service/sql_event"
 )
 
 var Processors map[string]model.Processor
@@ -36,6 +37,8 @@ func main() {
 	Processors[multichoice.CMDName()] = multichoice.MultiChoice
 	events.RegisterCommands(Processors)
 
+	db := sql_event.New()
+
 	tgToken := os.Getenv("BOT_TOKEN")
 
 	bot, err := tgapi.NewBotAPI(tgToken)
@@ -54,15 +57,21 @@ func main() {
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
 		}
-		if update.Message.IsCommand() {
-			exec := Processors[update.Message.Command()]
-			if exec != nil {
-				response, err := exec(update)
-				if err == nil {
-					_, err = bot.Send(*response)
-					if err != nil {
-						log.Printf("ERROR answering the user: %v\n", err)
-					}
+
+		var exec model.Processor
+		cookie := db.UserCookieGet(update.Message.Chat.ID)
+		if cookie.ID == update.Message.Chat.ID {
+			exec = Processors[cookie.Cookie]
+		} else if update.Message.IsCommand() {
+			exec = Processors[update.Message.Command()]
+		}
+
+		if exec != nil {
+			response, err := exec(update)
+			if err == nil {
+				_, err = bot.Send(*response)
+				if err != nil {
+					log.Printf("ERROR answering the user: %v\n", err)
 				}
 			}
 		} else {
