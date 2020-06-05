@@ -1,7 +1,8 @@
 package events
 
 import (
-	"log"
+	"fmt"
+	"strconv"
 
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sir-farfan/hack-a-bot/model"
@@ -24,8 +25,9 @@ func Events(recv tgapi.Update) (*tgapi.Chattable, error) {
 
 	events := GetEvents()
 	for _, evt := range events {
+		id := fmt.Sprintf("%d", evt.ID)
 		button := tgapi.InlineKeyboardButton{Text: evt.Name,
-			CallbackData: &evt.Description,
+			CallbackData: &id,
 		}
 		choices = append(choices, button)
 	}
@@ -52,8 +54,6 @@ func GetEvents() []model.Event {
 
 // Create - will only put the user in "event creation mode"
 func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
-	log.Printf("DEBUG: [%s] %s\n", recv.Message.From.UserName, recv.Message.Text)
-
 	db := sql_event.New()
 	cookie := db.UserCookieGet(recv.Message.Chat.ID)
 	if cookie.Cookie != "eventcreate" {
@@ -95,6 +95,28 @@ func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
 			msg.Text = "We're done"
 			db.UserCookieDelete(cookie)
 		}
+	} else {
+		msg.Text = "used up your events"
+		db.UserCookieDelete(cookie)
+	}
+
+	var chat tgapi.Chattable
+	chat = msg
+	return &chat, nil
+}
+
+func Subscribe(recv tgapi.Update) (*tgapi.Chattable, error) {
+	db := sql_event.New()
+	defer db.DB.Close()
+
+	msg := tgapi.NewMessage(recv.CallbackQuery.Message.Chat.ID, "")
+
+	event_id, _ := strconv.Atoi(recv.CallbackQuery.Data)
+	events := db.GetEventByID(int64(event_id))
+	if len(events) != 1 {
+		msg.Text = "Error looking up event"
+	} else {
+		msg.Text = fmt.Sprintf("This is what we know about the event:\n%s", events[0].Description)
 	}
 
 	var chat tgapi.Chattable

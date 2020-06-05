@@ -39,8 +39,20 @@ func (s *Storage) GetEvent(owner int64) []model.Event {
 	if owner > 0 {
 		statement += " WHERE owner = ?"
 	}
-	fmt.Println(statement)
+
 	err := s.DB.Select(&events, statement, owner)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return events
+}
+
+func (s *Storage) GetEventByID(id int64) []model.Event {
+	events := []model.Event{}
+	statement := "SELECT * FROM event  WHERE id = ?"
+
+	err := s.DB.Select(&events, statement, id)
 	if err != nil {
 		log.Println(err)
 	}
@@ -114,5 +126,8 @@ func (s *Storage) UserCookieDelete(user model.User) error {
 		fmt.Println(err)
 	}
 	_, err = delete.Exec(user.ID)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }

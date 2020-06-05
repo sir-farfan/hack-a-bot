@@ -54,31 +54,37 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message == nil { // ignore any non-Message Updates
-			continue
-		}
-
-		var exec model.Processor
-		cookie := db.UserCookieGet(update.Message.Chat.ID)
-		if cookie.ID == update.Message.Chat.ID {
-			exec = Processors[cookie.Cookie]
-		} else if update.Message.IsCommand() {
-			exec = Processors[update.Message.Command()]
-		}
-
-		if exec != nil {
-			response, err := exec(update)
-			if err == nil {
-				_, err = bot.Send(*response)
-				if err != nil {
-					log.Printf("ERROR answering the user: %v\n", err)
-				}
+		var response *tgapi.Chattable
+		if update.Message != nil { // message updates
+			var exec model.Processor
+			cookie := db.UserCookieGet(update.Message.Chat.ID)
+			if cookie.ID == update.Message.Chat.ID {
+				log.Printf("theres a cookie: %v\n", cookie)
+				exec = Processors[cookie.Cookie]
+			} else if update.Message.IsCommand() {
+				exec = Processors[update.Message.Command()]
 			}
+
+			if exec != nil {
+				response, err := exec(update)
+				if err == nil {
+					_, err = bot.Send(*response)
+					if err != nil {
+						log.Printf("ERROR answering the user: %v\n", err)
+					}
+				}
+			} else {
+				response, _ = Help(update)
+
+			}
+		} else if update.CallbackQuery != nil { // When a button gets pressed
+			response, _ = events.Subscribe(update)
 		} else {
-			response, _ := Help(update)
+			log.Printf("DEBUG: [%s] %s\n", update.Message.From.UserName, update.Message.Text)
+		}
+
+		if response != nil {
 			bot.Send(*response)
 		}
-
-		// log.Printf("DEBUG: [%s] %s\n", update.Message.From.UserName, update.Message.Text)
 	}
 }
