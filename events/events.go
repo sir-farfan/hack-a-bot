@@ -110,6 +110,7 @@ func Subscribe(recv tgapi.Update) (*tgapi.Chattable, error) {
 	defer db.DB.Close()
 
 	msg := tgapi.NewMessage(recv.CallbackQuery.Message.Chat.ID, "")
+	msg.ParseMode = "Markdown"
 
 	event_id, _ := strconv.Atoi(recv.CallbackQuery.Data)
 	events := db.GetEventByID(int64(event_id))
