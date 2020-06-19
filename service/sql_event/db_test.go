@@ -29,7 +29,7 @@ func TestEvent(t *testing.T) {
 	}
 
 	straps := model.Event{Owner: 3, Name: "straps", Description: "aerial straps skills"}
-	db.CreateEvent(model.Event{Owner: 2, Name: "silks", Description: "aerial silks dance"})
+	// db.CreateEvent(model.Event{Owner: 2, Name: "silks", Description: "aerial silks dance"})
 	db.CreateEvent(straps)
 	db.CreateEvent(model.Event{Owner: 4, Name: "pole", Description: "pole fitness"})
 
@@ -64,4 +64,9 @@ func TestUser(t *testing.T) {
 
 	err = db.UserCookieDelete(cookie)
 	assert.Nil(t, err)
+}
+
+func TestCantMerge(t *testing.T) {
+	db := New()
+	assert.Nil(t, db)
 }
