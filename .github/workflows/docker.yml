@@ -16,4 +16,5 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: sulfurf/tg-bot
           tag_with_sha: true
+          tag_with_ref: true
 
