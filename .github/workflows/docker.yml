@@ -1,22 +1,17 @@
-name: 'Docker'
+on: [push, pull_request]
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+name: Docker
 
 jobs:
-  buildpush:
-    name: BuildPush
+  docker:
+    name: Build and push to registry
     runs-on: ubuntu-latest
     steps:
-    - name: Build and push Docker images
-      uses: docker/build-push-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: sulfurf/tg-bot
-        tag_with_ref: true
-        tag_with_sha: true
+      - uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: sulfurf/tg-bot
+          tag_with_ref: true
+          tag_with_sha: true
 
