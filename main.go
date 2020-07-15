@@ -9,11 +9,13 @@ import (
 	"github.com/sir-farfan/hack-a-bot/events"
 	"github.com/sir-farfan/hack-a-bot/model"
 	"github.com/sir-farfan/hack-a-bot/multichoice"
-	"github.com/sir-farfan/hack-a-bot/service/sql_event"
+	"github.com/sir-farfan/hack-a-bot/service/sqlevent"
 )
 
+// Processors list of commands and
 var Processors map[string]model.Processor
 
+// Help - recursively returns all the actions and their help string
 func Help(recv tgapi.Update) (*tgapi.Chattable, error) {
 	help := tgapi.NewMessage(recv.Message.Chat.ID, "")
 	help.Text = "Call an action typing (or clicking) any of:"
@@ -37,7 +39,7 @@ func main() {
 	Processors[multichoice.CMDName()] = multichoice.MultiChoice
 	events.RegisterCommands(Processors)
 
-	db := sql_event.New()
+	db := sqlevent.New()
 
 	tgToken := os.Getenv("BOT_TOKEN")
 

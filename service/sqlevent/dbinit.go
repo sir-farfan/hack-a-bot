@@ -1,4 +1,4 @@
-package sql_event
+package sqlevent
 
 import (
 	"fmt"

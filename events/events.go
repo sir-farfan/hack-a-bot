@@ -6,13 +6,15 @@ import (
 
 	tgapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sir-farfan/hack-a-bot/model"
-	"github.com/sir-farfan/hack-a-bot/service/sql_event"
+	"github.com/sir-farfan/hack-a-bot/service/sqlevent"
 )
 
+// CMDName - the name for this command
 func CMDName() string {
 	return "events"
 }
 
+// RegisterCommands - call in order to add new commands to the help section
 func RegisterCommands(processors map[string]model.Processor) error {
 	processors["events"] = Events
 	processors["eventcreate"] = Create
@@ -47,14 +49,14 @@ func Events(recv tgapi.Update) (*tgapi.Chattable, error) {
 
 // GetEvents - name, description
 func GetEvents() []model.Event {
-	db := sql_event.New()
+	db := sqlevent.New()
 
 	return db.GetEvent(0)
 }
 
 // Create - will only put the user in "event creation mode"
 func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
-	db := sql_event.New()
+	db := sqlevent.New()
 	cookie := db.UserCookieGet(recv.Message.Chat.ID)
 	if cookie.Cookie != "eventcreate" {
 		db.UserCookieCreate(model.User{ID: recv.Message.Chat.ID, Cookie: "eventcreate"})
@@ -66,7 +68,7 @@ func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
 		events = db.GetEvent(recv.Message.Chat.ID)
 	}
 	event := events[0]
-	for k, _ := range events {
+	for k := range events {
 		if events[k].Name == "" || events[k].Description == "" {
 			event = events[k]
 		}
@@ -105,15 +107,16 @@ func Create(recv tgapi.Update) (*tgapi.Chattable, error) {
 	return &chat, nil
 }
 
+// Subscribe - Allows the user to subscribe to the selected event
 func Subscribe(recv tgapi.Update) (*tgapi.Chattable, error) {
-	db := sql_event.New()
+	db := sqlevent.New()
 	defer db.DB.Close()
 
 	msg := tgapi.NewMessage(recv.CallbackQuery.Message.Chat.ID, "")
 	msg.ParseMode = "Markdown"
 
-	event_id, _ := strconv.Atoi(recv.CallbackQuery.Data)
-	events := db.GetEventByID(int64(event_id))
+	eventID, _ := strconv.Atoi(recv.CallbackQuery.Data)
+	events := db.GetEventByID(int64(eventID))
 	if len(events) != 1 {
 		msg.Text = "Error looking up event"
 	} else {
