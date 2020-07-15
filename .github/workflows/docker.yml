@@ -1,4 +1,7 @@
 name: 'push to registry'
+
+on: [push, pull_request]
+
 description: 'pushes the latest commit to registry'
 uses: docker/build-push-action@v1
 with:
